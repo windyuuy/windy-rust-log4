@@ -37,8 +37,8 @@ impl Log4 {
         return log;
     }
 
-    pub fn set_log_impl(&mut self, delegate: Rc<Box<dyn LogImpl>>) -> &mut Self {
-        self.delegate = delegate;
+    pub fn set_log_impl(&mut self, delegate: Box<dyn LogImpl>) -> &mut Self {
+        self.delegate = Rc::new(delegate);
         return self;
     }
 
@@ -81,7 +81,7 @@ impl Log4 {
 
 #[cfg(test)]
 mod test_log4 {
-    use super::Log4;
+    use super::{DefaultLogImpl, Log4};
     use once_cell::sync::Lazy;
 
     static mut MYLOG: Lazy<Log4> = Lazy::new(|| Log4::new());
@@ -108,6 +108,13 @@ mod test_log4 {
         log.info("III");
         log.warn("JJJ");
         log.error("KKK");
+    }
+
+    #[test]
+    fn test_delete() {
+        let mut log = Log4::new();
+        log.set_log_impl(Box::new(DefaultLogImpl {}));
+        log.info("test delegate");
     }
 
     #[test]
