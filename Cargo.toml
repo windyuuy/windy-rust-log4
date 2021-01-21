@@ -1,6 +1,6 @@
 [package]
 name = "windy-log4"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["windy <kugoo11v12@126.com>"]
 edition = "2018"
 description = "A simple log4 module for rust."
