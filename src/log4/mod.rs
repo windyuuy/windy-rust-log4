@@ -26,6 +26,8 @@ pub struct Log4 {
     delegate: Rc<Box<dyn LogImpl>>,
 }
 
+unsafe impl Sync for Log4 {}
+
 impl Log4 {
     pub fn new() -> Self {
         let log = Log4 {
@@ -77,24 +79,48 @@ impl Log4 {
     }
 }
 
-#[test]
-fn test_log() {
-    let mut log = Log4::new();
-    let aaa: String = String::from("AAA");
-    let bbb: &String = &String::from("BBB");
-    log.add_tag(aaa).add_tag(bbb);
-    log.info("CCC");
-    // log.info("wklejweklfj");
-    log.info(String::from("DDD"));
-    log.info(bbb);
+#[cfg(test)]
+mod test_log4 {
+    use super::Log4;
+    use once_cell::sync::Lazy;
 
-    let mut log2 = log.fork();
-    log2.add_tag("fork1");
-    log2.info("EEE");
-    log2.warn("GGG");
-    log2.error("HHH");
+    static mut MYLOG: Lazy<Log4> = Lazy::new(|| Log4::new());
 
-    log.info("III");
-    log.warn("JJJ");
-    log.error("KKK");
+    static mut MYLOG22: Lazy<Log4> = Lazy::new(|| unsafe { MYLOG.fork() });
+
+    #[test]
+    fn test_log() {
+        let mut log = Log4::new();
+        let aaa: String = String::from("AAA");
+        let bbb: &String = &String::from("BBB");
+        log.add_tag(aaa).add_tag(bbb);
+        log.info("CCC");
+        // log.info("wklejweklfj");
+        log.info(String::from("DDD"));
+        log.info(bbb);
+
+        let mut log2 = log.fork();
+        log2.add_tag("fork1");
+        log2.info("EEE");
+        log2.warn("GGG");
+        log2.error("HHH");
+
+        log.info("III");
+        log.warn("JJJ");
+        log.error("KKK");
+    }
+
+    #[test]
+    fn test_static() {
+        unsafe {
+            MYLOG.info("static info");
+            MYLOG.warn("static warn");
+            MYLOG.error("static error");
+
+            let log2 = MYLOG.fork();
+            log2.info("fork static info");
+
+            MYLOG22.info("static fork info");
+        }
+    }
 }
