@@ -22,7 +22,11 @@ impl LogImpl for DefaultLogImpl {
 }
 
 pub struct Log4 {
+    /// 日志对象是否启用
+    pub enable: bool,
+    /// 日志标签列表
     tags: Vec<String>,
+    /// 日志IO代理
     delegate: Rc<Box<dyn LogImpl>>,
 }
 
@@ -31,6 +35,7 @@ unsafe impl Sync for Log4 {}
 impl Log4 {
     pub fn new() -> Self {
         let log = Log4 {
+            enable: true,
             tags: Vec::new(),
             delegate: Rc::new(Box::new(DefaultLogImpl {})),
         };
@@ -52,17 +57,23 @@ impl Log4 {
         return content;
     }
     pub fn info<T: std::fmt::Debug>(&self, ss: T) {
-        let content = self.to_log_line(ss);
-        self.delegate.info(&content);
+        if self.enable {
+            let content = self.to_log_line(ss);
+            self.delegate.info(&content);
+        }
     }
     pub fn warn<T: std::fmt::Debug>(&self, ss: T) {
-        let content = self.to_log_line(ss);
-        self.delegate.warn(&content);
+        if self.enable {
+            let content = self.to_log_line(ss);
+            self.delegate.warn(&content);
+        }
     }
 
     pub fn error<T: std::fmt::Debug>(&self, ss: T) {
-        let content = self.to_log_line(ss);
-        self.delegate.error(&content);
+        if self.enable {
+            let content = self.to_log_line(ss);
+            self.delegate.error(&content);
+        }
     }
 
     pub fn add_tag<T: std::fmt::Debug>(&mut self, tag: T) -> &mut Log4 {
@@ -74,6 +85,7 @@ impl Log4 {
         let log4 = Log4 {
             tags: self.tags.clone(),
             delegate: self.delegate.clone(),
+            enable: self.enable,
         };
         return log4;
     }
@@ -108,6 +120,13 @@ mod test_log4 {
         log.info("III");
         log.warn("JJJ");
         log.error("KKK");
+
+        let mut log3 = log2.fork();
+        log3.info("log enabled");
+        log3.enable = false;
+        log3.info("this log shall not appear");
+        log3.enable = true;
+        log3.info("log enabled again");
     }
 
     #[test]
